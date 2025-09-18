@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/jobdb
+    username: jobuser
+    password: jobpass
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop   # reset schema on each run
+    show-sql: false
+
+app:
+  dataseed:
+    enabled: true

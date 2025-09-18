@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/jobdb
+    username: jobuser
+    password: jobpass
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update   # change to validate in production
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  secret: mysecretkeyforjwt-dev
+  expiration: 3600000   # 1 hour
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: DEBUG
