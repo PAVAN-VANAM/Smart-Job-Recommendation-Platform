@@ -10,13 +10,14 @@ interface User {
 }
 
 interface Profile {
-  id: string;
-  fullName: string;
+  id: number;
+  name: string;
   location: string;
-  skills: string;
-  experienceYears: number;
+  skills: string[];
+  yearsExperience: number;
+  desiredSalary?: number;
   resumeLink?: string;
-  userId: string;
+  userId: number;
 }
 
 interface AuthContextType {
@@ -40,24 +41,28 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfileState] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Start as true for initial auth check
 
   useEffect(() => {
-    // Check for existing session on app load
-    const token = localStorage.getItem('jwt_token');
-    const userData = localStorage.getItem('user_data');
-    
-    if (token && userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('jwt_token');
-        localStorage.removeItem('user_data');
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('jwt_token');
+      const userData = localStorage.getItem('user_data');
+      
+      if (token && userData) {
+        try {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+          localStorage.removeItem('jwt_token');
+          localStorage.removeItem('user_data');
+          setUser(null); // Ensure user is null if parsing fails
+        }
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false); // Initial auth check complete
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -65,7 +70,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       const response = await authAPI.login(email, password);
       const { token, user : userData } = response.data;
-      console.log('userData:', userData);
       
       localStorage.setItem('jwt_token', token);
       localStorage.setItem('user_data', JSON.stringify(userData));
@@ -73,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       toast({
         title: "Login successful",
-        description: `Welcome back, ${userData.name}!`,
+        description: "Welcome to SMART JOB!",
       });
     } catch (error: any) {
       toast({
@@ -95,15 +99,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }) => {
     try {
       setIsLoading(true);
-      const response = await authAPI.register(userData);
+      await authAPI.register(userData);
       
       toast({
         title: "Registration successful",
         description: "Please log in with your credentials",
       });
       
-      // Auto-login after registration
-      await login(userData.email, userData.password);
     } catch (error: any) {
       toast({
         title: "Registration failed",
@@ -136,9 +138,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return true;
     } catch (error: any) {
       if (error.response?.status === 404) {
+        setProfileState(null); // Ensure profile is null if not found
         return false; // Profile doesn't exist
       }
       console.error('Error checking profile:', error);
+      setProfileState(null); 
       return false;
     }
   };

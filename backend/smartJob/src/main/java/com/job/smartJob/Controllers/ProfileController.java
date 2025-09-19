@@ -26,4 +26,13 @@ public class ProfileController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    // GET /api/profiles/user/{userId}
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<Profile> getProfileByUserId(@PathVariable Long userId) {
+        return profileService.getProfileByUserId(userId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
 }

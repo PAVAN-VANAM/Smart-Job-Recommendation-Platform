@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -20,28 +20,57 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, user } = useAuth(); // Get user from auth context
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = location.state?.from?.pathname || '/dashboard';
+  const registeredEmail = location.state?.email || '';
+  const registeredPassword = location.state?.password || '';
+  const justRegistered = location.state?.justRegistered || false; // Get the flag
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: registeredEmail,
+      password: registeredPassword,
     },
   });
+
+  // Reset form with pre-filled values if they change (e.g., navigating back to login)
+  useEffect(() => {
+    form.reset({
+      email: registeredEmail,
+      password: registeredPassword,
+    });
+  }, [registeredEmail, registeredPassword, form]);
 
   const onSubmit = async (data: LoginForm) => {
     try {
       await login(data.email, data.password);
-      navigate(from, { replace: true });
+      // After successful login, the user object in AuthContext will be updated
+      // We need to wait for the user state to update before redirecting
     } catch (error) {
       // Error is handled in the AuthContext
     }
   };
+
+  // Effect to handle redirection after user state is updated
+  useEffect(() => {
+    if (user && !isLoading) {
+      if (justRegistered && user.role === 'ROLE_USER') {
+        navigate('/profile/create', { replace: true });
+      } else if (user.role === 'ROLE_USER') {
+        navigate('/dashboard', { replace: true });
+      } else if (user.role === 'ROLE_RECRUITER') {
+        navigate('/recruiter/dashboard', { replace: true });
+      } else {
+        // Fallback for any other roles or unexpected scenarios
+        navigate(from, { replace: true });
+      }
+    }
+  }, [user, isLoading, justRegistered, navigate, from]);
+
 
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">

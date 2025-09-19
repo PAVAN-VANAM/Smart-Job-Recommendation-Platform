@@ -13,14 +13,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { User, MapPin, Briefcase, Link as LinkIcon, X } from 'lucide-react';
+import { User, MapPin, Briefcase, DollarSign, X } from 'lucide-react';
 import { useState } from 'react';
 
 const profileSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  name: z.string().min(2, 'Full name must be at least 2 characters'),
   location: z.string().min(2, 'Location is required'),
-  experienceYears: z.number().min(0, 'Experience years must be 0 or more').max(50, 'Experience years must be less than 50'),
-  resumeLink: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
+  yearsExperience: z.number().min(0, 'Experience years must be 0 or more').max(50, 'Experience years must be less than 50'),
+  desiredSalary: z.number().min(0, 'Desired salary must be 0 or more').optional().nullable().default(0),
 });
 
 type ProfileForm = z.infer<typeof profileSchema>;
@@ -42,12 +42,20 @@ export default function CreateProfile() {
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      fullName: user?.name || '',
+      name: user?.name || '',
       location: '',
-      experienceYears: 0,
-      resumeLink: '',
+      yearsExperience: 0,
+      desiredSalary: 0,
     },
   });
+
+  const redirectToDashboard = () => {
+    if (user?.role === 'ROLE_RECRUITER') {
+      navigate('/recruiter/dashboard', { replace: true });
+    } else {
+      navigate('/dashboard', { replace: true });
+    }
+  };
 
   const onSubmit = async (data: ProfileForm) => {
     if (selectedSkills.length === 0) {
@@ -62,9 +70,12 @@ export default function CreateProfile() {
     try {
       setIsLoading(true);
       const profileData = {
-        ...data,
-        skills: selectedSkills.join(', '),
-        userId: user!.id,
+        name: data.name,
+        location: data.location,
+        yearsExperience: data.yearsExperience,
+        desiredSalary: data.desiredSalary || 0,
+        skills: selectedSkills,
+        userId: parseInt(user!.id),
       };
 
       const response = await profileAPI.createProfile(profileData);
@@ -75,8 +86,9 @@ export default function CreateProfile() {
         description: "You can now view personalized job recommendations",
       });
 
-      navigate('/dashboard');
+      redirectToDashboard(); // Redirect to appropriate dashboard on success
     } catch (error: any) {
+      console.error("Error creating profile:", error);
       toast({
         title: "Error creating profile",
         description: error.response?.data?.message || "Something went wrong",
@@ -139,7 +151,7 @@ export default function CreateProfile() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <FormField
                     control={form.control}
-                    name="fullName"
+                    name="name"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Full Name</FormLabel>
@@ -181,7 +193,7 @@ export default function CreateProfile() {
 
                   <FormField
                     control={form.control}
-                    name="experienceYears"
+                    name="yearsExperience"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center space-x-2">
@@ -207,6 +219,32 @@ export default function CreateProfile() {
                             </SelectContent>
                           </Select>
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="desiredSalary"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center space-x-2">
+                          <DollarSign className="h-4 w-4" />
+                          <span>Desired Salary (Annual)</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="e.g., 120000"
+                            {...field}
+                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 0)}
+                            className="transition-all focus:shadow-soft"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Your preferred annual salary in USD
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -276,35 +314,11 @@ export default function CreateProfile() {
                     </div>
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="resumeLink"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center space-x-2">
-                          <LinkIcon className="h-4 w-4" />
-                          <span>Resume Link (Optional)</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="https://drive.google.com/your-resume"
-                            {...field}
-                            className="transition-all focus:shadow-soft"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Link to your resume or portfolio (Google Drive, Dropbox, etc.)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   <div className="flex space-x-4 pt-4">
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => navigate('/dashboard')}
+                      onClick={redirectToDashboard} // Redirect to appropriate dashboard
                       className="flex-1"
                     >
                       Skip for Now

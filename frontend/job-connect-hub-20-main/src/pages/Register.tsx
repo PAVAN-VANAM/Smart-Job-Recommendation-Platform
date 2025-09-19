@@ -53,7 +53,8 @@ export default function Register() {
         password: data.password,
         role: data.role,
       });
-      navigate('/dashboard');
+      // Redirect to login page with a flag indicating successful registration
+      navigate('/login', { state: { justRegistered: true, email: data.email, password: data.password } });
     } catch (error) {
       // Error is handled in the AuthContext
     }

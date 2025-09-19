@@ -56,4 +56,7 @@ public class ProfileServiceImpl implements ProfileService {
         return profileRepository.findById(id);
     }
 
+    public Optional<Profile> getProfileByUserId(Long userId) {
+        return profileRepository.findByUserId(userId);
+    }
 }

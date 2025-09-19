@@ -119,24 +119,26 @@ export default function UserDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [selectedJobTitle, setSelectedJobTitle] = useState('');
+  const [hasProfileChecked, setHasProfileChecked] = useState(false); // New state to track if profile check has run
 
   useEffect(() => {
-    const initializeDashboard = async () => {
-      if (!user) return;
-
-      // Check if user has a profile
-      const hasProfile = await checkProfile();
-      if (!hasProfile) {
-        navigate('/profile/create');
+    const loadProfileAndJobs = async () => {
+      if (!user) {
+        setIsLoading(false);
         return;
       }
 
-      // Load jobs
+      // Check profile status only once after user is loaded
+      if (!hasProfileChecked) {
+        await checkProfile();
+        setHasProfileChecked(true);
+      }
+      
       await loadJobs();
     };
 
-    initializeDashboard();
-  }, [user, checkProfile, navigate]);
+    loadProfileAndJobs();
+  }, [user, checkProfile, hasProfileChecked]); // Depend on user and hasProfileChecked
 
   const loadJobs = async () => {
     try {
@@ -224,6 +226,33 @@ export default function UserDashboard() {
             </div>
           </div>
         </motion.div>
+
+        {/* Profile Completion Prompt */}
+        {user?.role === 'ROLE_USER' && !profile && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mb-8"
+          >
+            <Card className="bg-yellow-50/80 border-yellow-200 text-yellow-800 shadow-soft">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <User className="h-6 w-6 text-yellow-700" />
+                  <div>
+                    <h3 className="font-semibold text-lg">Complete Your Profile</h3>
+                    <p className="text-sm">
+                      Unlock personalized job recommendations by completing your profile.
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={() => navigate('/profile/create')} className="bg-yellow-600 hover:bg-yellow-700 text-white">
+                  Create Profile
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Quick Actions */}
         <motion.div
@@ -325,7 +354,7 @@ export default function UserDashboard() {
                   <p className="text-muted-foreground mb-4">
                     Complete your profile to get personalized job recommendations
                   </p>
-                  <Button onClick={() => navigate('/profile')}>
+                  <Button onClick={() => navigate('/profile/create')}>
                     Complete Profile
                   </Button>
                 </Card>

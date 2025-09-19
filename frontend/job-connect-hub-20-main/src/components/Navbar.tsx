@@ -18,12 +18,24 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleProfileClick = () => {
+    if (user?.role === 'ROLE_USER') {
+      if (profile) {
+        navigate('/profile');
+      } else {
+        navigate('/profile/create');
+      }
+    } else {
+      navigate('/recruiter/dashboard'); 
+    }
   };
 
   if (!user) {
@@ -51,6 +63,18 @@ export function Navbar() {
   }
 
   const isRecruiter = user.role === 'ROLE_RECRUITER';
+
+  // Safely determine the display name and initial
+  const getDisplayName = () => {
+    if (!user?.name) return 'Job Taker';
+    if (typeof user.name === 'string') return user.name;
+    // Handle case where user.name might be an object like { id: ..., name: '...' }
+    if (typeof (user.name as any)?.name === 'string') return (user.name as any).name;
+    return 'Job Taker';
+  };
+
+  const displayName = getDisplayName();
+  const displayInitial = (displayName[0] || 'J').toUpperCase();
 
   return (
     <nav className="border-b bg-card shadow-soft">
@@ -102,20 +126,18 @@ export function Navbar() {
                 <Button variant="ghost" className="flex items-center space-x-2">
                   <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center">
                     <span className="text-sm font-medium text-primary-foreground">
-                      {user.name.charAt(0).toUpperCase()}
+                      {displayInitial}
                     </span>
                   </div>
-                  <span className="text-sm font-medium">{user.name}</span>
+                  <span className="text-sm font-medium">{displayName}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="flex items-center">
-                    <User className="h-4 w-4 mr-2" />
-                    Profile
-                  </Link>
+                <DropdownMenuItem onClick={handleProfileClick} className="flex items-center">
+                  <User className="h-4 w-4 mr-2" />
+                  Profile
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">

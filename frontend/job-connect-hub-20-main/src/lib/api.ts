@@ -52,7 +52,7 @@ export const authAPI = {
 
 // Profile API calls
 export const profileAPI = {
-  getProfile: (userId: string) => api.get(`/profiles/${userId}`),
+  getProfile: (userId: string) => api.get(`/profiles/user/${userId}`), // Updated endpoint
   createProfile: (profileData: any) => api.post('/profiles', profileData),
   updateProfile: (id: string, profileData: any) => api.put(`/profiles/${id}`, profileData),
 };

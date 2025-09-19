@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { HomeRedirect } from "@/components/HomeRedirect";
 
 // Pages
 import HomePage from "./pages/HomePage";
@@ -14,7 +15,9 @@ import Register from "./pages/Register";
 import UserDashboard from "./pages/UserDashboard";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import CreateProfile from "./pages/CreateProfile"; 
+import UserProfile from "./pages/UserProfile"; // Import the new UserProfile page
 import NotFound from "./pages/NotFound";
+import Unauthorized from "./pages/Unauthorized"; 
 
 const queryClient = new QueryClient();
 
@@ -28,7 +31,7 @@ const App = () => (
           <div className="min-h-screen bg-background">
             <Navbar />
             <Routes>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/" element={<HomeRedirect />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               
@@ -43,6 +46,11 @@ const App = () => (
                   <CreateProfile />
                 </ProtectedRoute>
               } />
+              <Route path="/profile" element={ // New route for UserProfile
+                <ProtectedRoute requiredRole="ROLE_USER">
+                  <UserProfile />
+                </ProtectedRoute>
+              } />
               
               {/* Protected Recruiter Routes */}
               <Route path="/recruiter/dashboard" element={
@@ -51,8 +59,8 @@ const App = () => (
                 </ProtectedRoute>
               } />
               
-              {/* Redirect based on role */}
-              <Route path="/dashboard" element={<Navigate to="/dashboard" replace />} />
+              {/* Unauthorized Route */}
+              <Route path="/unauthorized" element={<Unauthorized />} />
               
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />
